@@ -1,0 +1,248 @@
+library(dplyr)
+library(zoo)
+
+library(ggplot2)
+archivo_csv <- "C:/Users/sebas/Desktop/data.csv"
+datos <- read.csv(archivo_csv, header = TRUE, sep = ",")
+# Convierte la columna de fecha a un formato de fecha
+datos$Fecha <- as.Date(datos$Fecha, format = "%d/%m/%Y")
+
+resultados <- datos %>%
+  mutate(mes = format(Fecha, "%m/%Y"),
+         lugar = ifelse(Sucursal == "Palermo", "Belgrano", "no")) %>%
+  group_by(mes, Sucursal, Proceso) %>%
+  summarise(sum_clientes = sum(Clientes), sum_tiempo = sum(Tiempo), )
+print (n= 40, resultados)
+
+#Palermo A
+
+resultados <- datos %>%
+  mutate(mes = format(Fecha, "%m/%Y"))  %>%
+  filter(Sucursal == "Palermo" & Proceso == "A") %>%
+  group_by(mes, Sucursal, Proceso) %>%
+  summarise(sum_clientes = sum(Clientes), sum_tiempo = sum(Tiempo))
+print(n = 74, resultados)
+
+resultados$mes <- as.yearmon(resultados$mes, "%m/%Y")
+
+resultados <- resultados[order(resultados$mes), ]
+
+# Crear el gráfico de barras usando ggplot2
+ggplot(resultados, aes(x = mes, y = sum_clientes)) + 
+  geom_bar(stat = "identity") +
+  labs(title = "Gráfico de barras cronológico", x = "Fechas", y = "clientes") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+# Crear el gráfico de barras usando ggplot2
+ggplot(resultados, aes(x = mes, y = sum_tiempo/3600)) + 
+  geom_bar(stat = "identity") +
+  labs(title = "Gráfico de barras cronológico", x = "Fechas", y = "tiempo") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# Crear el gráfico de barras usando ggplot2
+ggplot(resultados, aes(x = mes, y = 3600 *  sum_clientes / sum_tiempo  ) )+ 
+  geom_bar(stat = "identity") +
+  labs(title = "Gráfico de barras cronológico", x = "Fechas", y = "clientes/tiempo") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+#estimacion clientes marzo 2019: 24500 clientes, : 0.0012 clientes / segundos
+tasa_servicio <- 1 / 0.2056
+tasa_servicio
+tasa_llegada <- 24500 / (31*8)
+tasa_llegada
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#Palermo B
+
+resultados <- datos %>%
+  mutate(mes = format(Fecha, "%m/%Y"))  %>%
+  filter(Sucursal == "Palermo" & Proceso == "B") %>%
+  group_by(mes, Sucursal, Proceso) %>%
+  summarise(sum_clientes = sum(Clientes), sum_tiempo = sum(Tiempo))
+resultados
+
+resultados$mes <- as.yearmon(resultados$mes, "%m/%Y")
+
+resultados <- resultados[order(resultados$mes), ]
+
+# Crear el gráfico de barras usando ggplot2
+ggplot(resultados, aes(x = mes, y = sum_clientes)) + 
+  geom_bar(stat = "identity") +
+  labs(title = "Gráfico de barras cronológico", x = "Fechas", y = "clientes") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+print(n = 74, resultados)
+# Crear el gráfico de barras usando ggplot2
+ggplot(resultados, aes(x = mes, y = sum_tiempo)) + 
+  geom_bar(stat = "identity") +
+  labs(title = "Gráfico de barras cronológico", x = "Fechas", y = "tiempo") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# Crear el gráfico de barras usando ggplot2
+ggplot(resultados, aes(x = mes, y = 3600 * sum_clientes / sum_tiempo)) + 
+  geom_bar(stat = "identity") +
+  labs(title = "Gráfico de barras cronológico", x = "Fechas", y = "clientes/tiempo") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+#estimacion clientes marzo 2019: 4700 clientes, : 660 clientes atendidos/segundo
+tasa_servicio <- 0.0015 * 3600
+tasa_servicio
+tasa_llegada <- 4700 / (31*8)
+tasa_llegada
+
+
+
+
+
+
+
+#Belgrano A
+
+resultados <- datos %>%
+  mutate(mes = format(Fecha, "%m/%Y"))  %>%
+  filter(Sucursal == "Belgrano" & Proceso == "A") %>%
+  group_by(mes, Sucursal, Proceso) %>%
+  summarise(sum_clientes = sum(Clientes), sum_tiempo = sum(Tiempo))
+resultados
+
+resultados$mes <- as.yearmon(resultados$mes, "%m/%Y")
+
+resultados <- resultados[order(resultados$mes), ]
+
+# Crear el gráfico de barras usando ggplot2
+ggplot(resultados, aes(x = mes, y = sum_clientes)) + 
+  geom_bar(stat = "identity") +
+  labs(title = "Gráfico de barras cronológico", x = "Fechas", y = "clientes") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+print(n = 74, resultados)
+# Crear el gráfico de barras usando ggplot2
+ggplot(resultados, aes(x = mes, y = sum_tiempo)) + 
+  geom_bar(stat = "identity") +
+  labs(title = "Gráfico de barras cronológico", x = "Fechas", y = "tiempo") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# Crear el gráfico de barras usando ggplot2
+ggplot(resultados, aes(x = mes, y = sum_clientes / sum_tiempo)) + 
+  geom_bar(stat = "identity") +
+  labs(title = "Gráfico de barras cronológico", x = "Fechas", y = "clientes/tiempo") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+#estimacion clientes marzo 2019: 20500 clientes, : 800 clientes atendidos/segundo
+tasa_servicio <- 0.00122 * 3600
+tasa_servicio
+tasa_llegada <- 20500 / (31*8)
+tasa_llegada
+
+
+
+
+
+
+
+
+df <- datos %>%
+  filter(month(Fecha) == 3) %>%
+  filter(Proceso == "A") %>%
+  filter(Sucursal == "Palermo")
+
+df <- df %>%
+  group_by(Fecha)
+
+df <- df %>%
+  summarise(clientes = sum(Clientes), tiempo = sum(Tiempo))
+
+# Ordenar los datos por fecha
+df <- df %>%
+  arrange(Fecha)
+df_alto_trafico <- df %>%
+  filter(clientes > 1000)
+print(n = 183, df_alto_trafico)
+
+# Crear el gráfico de barras
+ggplot(df, aes(x = Fecha, y = clientes)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Clientes por fecha", x = "Fecha", y = "Clientes")
+
+
+
+df <- datos %>%
+  filter(month(Fecha) == 3) %>%
+  filter(Proceso == "B") %>%
+  filter(year(Fecha) == "2018") %>%
+  filter(Sucursal == "Palermo")
+
+df <- df %>%
+  group_by(Fecha)
+
+df <- df %>%
+  summarise(clientes = sum(Clientes), tiempo = sum(Tiempo))
+
+df <- df %>%
+  arrange(Fecha)
+print(n = 31, df)
+
+
+
+# Crear el gráfico de barras
+ggplot(df, aes(x = Fecha, y = clientes)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Clientes por fecha", x = "Fecha", y = "Clientes")
+
+
+
+df <- datos %>%
+  filter(month(Fecha) == 3) %>%
+  filter(Proceso == "A") %>%
+  filter(year(Fecha) == "2018") %>%
+  filter(Sucursal == "Belgrano")
+
+df <- df %>%
+  group_by(Fecha)
+
+df <- df %>%
+  summarise(clientes = sum(Clientes), tiempo = sum(Tiempo))
+
+df <- df %>%
+  arrange(Fecha)
+print(n = 31, df)
+
+
+
+# Crear el gráfico de barras
+ggplot(df, aes(x = Fecha, y = clientes)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Clientes por fecha", x = "Fecha", y = "Clientes")
+
+#Definimos los parámetros del sistema
+tasa_llegada <- 82.66129
+tasa_servicio <- 4.392
+numero_agentes <- 29
+
+# Simulamos el sistema
+n_clientes <- 10000
+tiempo_llegada <- rexp(n_clientes, tasa_llegada)
+tiempo_servicio <- rexp(n_clientes, tasa_servicio)
+tiempo_espera <- tiempo_servicio - tiempo_llegada
+
+# Calculamos el número de clientes que tardan más de 5 minutos
+n_clientes_mas_de_5 <- sum(tiempo_espera < 1/12) / n_clientes
+
+# Imprimimos el resultado
+print(n_clientes_mas_de_5)
