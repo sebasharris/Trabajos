@@ -1,0 +1,73 @@
+library(readxl)
+library(dplyr)
+library(caret)
+datos1 <- read_excel("C:/Users/sebas/Desktop/L_HARRIS_SEBASTIAN_102367.xlsx", sheet = "datos_TP3_modelado")
+datos2 <- read_excel("C:/Users/sebas/Desktop/L_HARRIS_SEBASTIAN_102367.xlsx", sheet = "datos_TP3_prediccion")
+
+
+datos1
+modelo1 = glm(formula = suscripcion ~ ., data = datos1, family ='binomial')
+summary(modelo1)
+
+AIC(modelo1)
+BIC(modelo1)
+with(summary(modelo1), 1 - deviance/null.deviance) #R2 McFadden
+
+
+
+#2
+
+#b
+modelo1forward <- step(object = modelo1, scope = formula(modelo1), direction = "forward", trace = 2)
+summary(modelo1forward)
+AIC(modelo1forward)
+BIC(modelo1forward)
+with(summary(modelo1forward), 1 - deviance/null.deviance) #R2 McFadden
+
+modelo1backward <- step(object = modelo1, scope = formula(modelo1), direction = "backward", trace = 2)
+summary(modelo1backward)
+AIC(modelo1backward)
+BIC(modelo1backward)
+with(summary(modelo1backward), 1 - deviance/null.deviance) #R2 McFadden
+
+
+
+#3
+
+modelo3 <- glm(formula = suscripcion ~ prestamo + default + duracion , data = datos1, family ='binomial')
+summary(modelo3)
+dfprestamo0d0 <- datos1 %>%
+  filter(prestamo == 0)%>%
+  filter(default == 0)
+
+dfprestamo1d0 <- datos1 %>%
+  filter(prestamo == 1) %>%
+  filter(default == 0)
+dfprestamo0d1 <- datos1 %>%
+  filter(default == 1) %>%
+  filter(prestamo == 0)
+dfprestamo1d1 <- datos1 %>%
+  filter(default == 1) %>%
+  filter(prestamo == 1)
+
+modelo3p0 <- glm(formula = suscripcion ~ prestamo + default + duracion , data = dfprestamo0, family ='binomial')
+summary(modelo3p0)
+modelo3p1 <- glm(formula = suscripcion ~ prestamo + default + duracion , data = dfprestamo1, family ='binomial')
+summary(modelo3p1)
+modelo3d0 <- glm(formula = suscripcion ~ prestamo + default + duracion , data = dfdef0, family ='binomial')
+summary(modelo3d0)
+modelo3d1 <- glm(formula = suscripcion ~ prestamo + default + duracion , data = dfdef1, family ='binomial')
+summary(modelo3d1)
+
+
+
+#5
+
+modelofinal <- glm(formula = suscripcion ~ estado_civil + default 
+                   + prestamo + hipoteca+ contactos_previos + resultado_ultimo_contacto   , data = datos1, family ='binomial')
+summary(modelofinal)
+pred <- predict(modelofinal, datos2, type="response")
+probabilidad = as.list(pred)
+datos2$suscripcionprobabilidad = probabilidad
+datos2$suscripcionprobabilidad=sapply(datos2$suscripcionprobabilidad,as.numeric)
+datos2
