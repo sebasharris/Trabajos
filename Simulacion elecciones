@@ -1,0 +1,46 @@
+# Cargar la librería para la distribución triangular
+library(triangle)
+
+# Definir la función de densidad de la variable aleatoria A
+f_A <- function(x) {
+  if (x >= 0 && x <= 0.2) {
+    return(8 * x)
+  } else {
+    return(0)
+  }
+}
+
+# Inicializar el contador de la segunda vuelta
+second_round_count <- 0
+
+# Realizar simulación con 1000 iteraciones
+for (i in 1:1000) {
+  # Simular valores para A, B y C
+  AX <- runif(1, 0, 0.2)
+  AY <- runif(1, 0, 0.2)
+  AZ <- runif(1, 0, 0.2)
+  BX <- runif(1, 0, 0.4)
+  BY <- runif(1, 0, 0.4)
+  BZ <- runif(1, 0, 0.4)
+  CX <- rtriangle(1, 0, 0.2, 0.1)  
+  CY <- rtriangle(1, 0, 0.2, 0.1)
+  CZ <- rtriangle(1, 0, 0.2, 0.1)
+  # Calcular los porcentajes de votos para cada candidato
+  X <- 10 * (f_A(AX) + BX + CX) + 30
+  Y <- 15 * (f_A(AY) + BY + CY) + 20
+  Z <- 10 * (f_A(AZ) + BZ + CZ) + 20
+  
+  # Verificar si se necesita una segunda vuelta
+  if (max(X, Y, Z) < 50) {
+    second_round_count <- second_round_count + 1
+  }
+}
+X
+Y
+Z
+
+# Calcular la probabilidad de segunda vuelta
+probability_second_round <- second_round_count / 1000
+
+# Imprimir el resultado
+cat("La probabilidad de que se realice una segunda vuelta es aproximadamente:", probability_second_round)
