@@ -1,0 +1,42 @@
+# Definir los parámetros
+lambda <- 82.66129 # Tasa de llegada promedio (clientes por unidad de tiempo)
+mu <- 4.392      # Tasa de servicio promedio (clientes por unidad de tiempo)
+c <- 20       # Número de servidores
+
+# Simular el sistema de colas
+sim_time <- 100000 # Tiempo de simulación
+arrivals <- numeric(sim_time)  # Tiempo de llegada de los clientes
+departures <- numeric(sim_time)  # Tiempos de salida de los clientes
+queue <- numeric(sim_time)  # Longitud de la cola en diferentes momentos
+waiting_time <- numeric(0) # Tiempo de espera de los clientes
+
+# Inicializar
+clock <- 0
+departures[1] <- Inf
+queue[1] <- 0
+
+# Simulación
+for (i in 2:sim_time) {
+  inter_arrival <- rexp(1, lambda)
+  clock <- clock + inter_arrival
+  arrivals[i] <- clock
+  if (queue[i - 1] < c) {
+    service_time <- rexp(1, mu)
+    departures[i] <- clock + service_time
+    queue[i] <- queue[i - 1] + 1
+  } else {
+    service_time <- rexp(1, mu)
+    departures[i] <- departures[i - c] + service_time
+    queue[i] <- queue[i - 1]
+  }
+  # Calcular el tiempo de espera para el cliente actual y almacenarlo
+  waiting_time <- c(waiting_time, pmax(0, departures[i - 1] - arrivals[i]))
+}
+
+# Calcular medidas de desempeño
+mean_queue_length <- mean(queue)
+mean_wait_time <- mean(waiting_time)
+percent_less_than_threshold <- mean(waiting_time < 0.0833) * 100
+
+
+cat("Porcentaje de personas que esperan menos de 0.0833 unidades de tiempo:", percent_less_than_threshold, "%\n")
