@@ -1,0 +1,170 @@
+library(readxl)
+library(dplyr)
+library(caret)
+datos1 <- read_excel("C:/Users/sebas/Desktop/L_HARRIS_SEBASTIAN_102367.xlsx")
+
+str(datos1)
+dim(datos1)
+summary(datos1)
+
+table(is.na(datos1))
+sum(complete.cases(datos1))
+which(!complete.cases(datos1))
+
+dfsel <- datos1[complete.cases(datos1),]
+
+
+modelo1 = glm(formula = Churn ~ gender + SeniorCitizen 
+              + Partner +	Dependents +	tenure	+ MultipleLines +	OnlineSecurity +	OnlineBackup 
+              +	DeviceProtection +	TechSupport +	StreamingTV +	StreamingMovies +	Contract +	PaperlessBilling 
+              +	PaymentMethod +	MonthlyCharges +	TotalCharges , data = dfsel, family ='binomial')
+summary(modelo1)
+dfsel <- dummy_cols(dfsel, select_columns = gender + Partner + Dependents + MultipleLines + OnlineSecurity + OnlineBackup + DeviceProtection + TechSupport + StreamingTV + StreamingMovies + Contract + PaperlessBilling + PaymentMethod)
+AIC(modelo1)
+BIC(modelo1)
+with(summary(modelo1), 1 - deviance/null.deviance) #R2 McFadden
+
+
+
+#2
+set.seed(1)
+indices = sample.split(dfsel$Churn, SplitRatio = 0.7)
+dfentren = dfsel[indices,]
+dfvalid = dfsel[!(indices),]
+
+#b
+modelo2 = glm(formula = Churn ~ gender + SeniorCitizen 
+              + Partner +	Dependents +	tenure	+ MultipleLines +	OnlineSecurity +	OnlineBackup 
+              +	DeviceProtection +	TechSupport +	StreamingTV +	StreamingMovies +	Contract +	PaperlessBilling 
+              +	PaymentMethod +	MonthlyCharges +	TotalCharges , data = dfentren, family ='binomial')
+modelo1forward= step(object = modelo1, scope = formula(modelo2), direction = "forward", trace = 2)
+summary(modelo1forward)
+
+modelo1backward<- stepAIC(modelo2, direction="backward")
+summary(modelo1backward)
+#c
+
+modelovalF <-  glm(formula = Churn ~ gender + Partner + Dependents + tenure + MonthlyCharges + SeniorCitizen + 
+                                                MultipleLines + Contract + DeviceProtection +  
+                                                PaperlessBilling + TotalCharges + OnlineBackup + PaymentMethod + 
+                                                StreamingMovies + OnlineSecurity + TechSupport + StreamingTV, 
+                                              family = "binomial", data = dfvalid)
+summary(modelovalF)
+
+modelovalB <- glm(formula = Churn ~ tenure + MultipleLines + 
+                        OnlineSecurity + TechSupport + 
+                        Contract + PaperlessBilling + 
+                        PaymentMethod + MonthlyCharges + TotalCharges,
+                        family = "binomial", data = dfvalid)
+
+summary(modelovalB)
+
+AIC(modelovalF)
+BIC(modelovalF)
+with(summary(modelovalF), 1 - deviance/null.deviance) #R2 McFadden
+AIC(modelovalB)
+BIC(modelovalB)
+with(summary(modelovalB), 1 - deviance/null.deviance) #R2 McFadden
+
+#matriz confusion
+predic <- predict(modelovalB, dfvalid)
+predic = ifelse(predic>0.5,1,0)
+
+confusionMatrix(as.factor(validacion$Churn),as.factor(predic), positive='1')
+
+predic2 <- predict(modelovalB, dfvalid)
+predic2 = ifelse(predic2>(nrow(filter(validacion, Churn==1))/nrow(validacion)),1,0)
+
+confusionMatrix(as.factor(validacion$Churn),as.factor(predic2), positive='1')
+#multicolindealidad
+
+as.data.frame(vif(modelovalB))
+
+det(cor(model.matrix(modelovalB))[-1,-1])
+
+#Hay signos de multicolinealidad. El determinante de la matriz de coorelaciones es menor a 0.1 y hay dos variables 
+  #que presentan un VIF mayor a 10. Ambas son altamente significativas. Supongo que ambas variables se relacionan en que, mientras mayor tenure tenga el usuario, más ha pagado y viceversa.
+#Eliminaría la variable TotalCharges (tiene menor significancia y mayor VIF que la variable tenure)
+
+#3s
+
+x= model.matrix(Churn ~ gender + SeniorCitizen	+ Partner +	Dependents +	tenure	+ MultipleLines +	
+                  OnlineSecurity +	OnlineBackup +	DeviceProtection +	TechSupport +	StreamingTV +	
+                  StreamingMovies +	Contract +	PaperlessBilling +	PaymentMethod +	MonthlyCharges +	
+                  TotalCharges, dfentren)[,-1]
+set.seed(1)
+
+
+cv.modelo_lasso = cv.glmnet(x, y = dfentren$Churn, family="binomial", alpha = 1)
+plot(cv.modelo_lasso)
+
+#b
+set.seed(1)
+
+modelo_lasso = glmnet(x = dfentren[,-19],
+                      y = dfentren$Churn,
+                      family="binomial",
+                      alpha = 1
+)
+modelo_lasso
+
+plot(modelo_lasso, label= TRUE, xvar= 'lambda')
+abline(v=log(0.07055), col="red", lty=5)
+
+
+modelo_lasso5 = glmnet(x = dfentren[,-19],
+                       y = dfentren$Churn,
+                       family="binomial",
+                       alpha = 1,
+                       lambda= exp(-2.652)) 
+coef(modelo_lasso5)
+
+modelo_lasso5=glm(formula = Churn ~ tenure + OnlineSecurity + 
+                    TechSupport + Contract + MonthlyCharges, 
+                  family = "binomial", data = dfentren)
+summary(modelo_lasso5)
+
+AIC(modelo_lasso5)
+BIC(modelo_lasso5)
+with(summary(modelo_lasso5), 1 - deviance/null.deviance) #R2 McFadden
+
+
+#4 
+datos2 <- read_excel("C:\\Users\\sebas\\Desktop\\datos_101549_HARRIS_SEBASTIAN (1).xlsx", sheet = "CientesEvaluacion")
+  keeps <- c("gender", "SeniorCitizen", "MultipleLines", "OnlineSecurity", "Contract", "TotalCharges")
+  datosfinal = datos2[keeps]
+  
+modelofinal = glm(formula = Churn ~ gender + SeniorCitizen + MultipleLines+ 
+                    OnlineSecurity + Contract + TotalCharges, , data = dfsel, family ='binomial')
+summary(modelofinal)
+
+pred <- predict(modelofinal, datosfinal, type="response")
+probabilidad = as.list(pred)
+datos2$churnprobabilidad = probabilidad
+datos2$churnprobabilidad=sapply(datos2$churnprobabilidad,as.numeric)
+datos2
+
+
+#B
+
+datos2$Esperanza_ValorCliente <- 12 * datos2$TotalCharges * (1-datos2$churnprobabilidad)
+
+#c
+#probabilidad de no churn multiplico por dos, y al valor final multiplico por 0,85
+
+datos2$E_ValorClienteEstrategia <- 12 * datos2$TotalCharges * 0.85 * (1-datos2$churnprobabilidad/2)-35
+
+#D
+datos2$Llamo <- datos2$E_ValorClienteEstrategia >= datos2$Esperanza_ValorCliente
+datos2$NoLlamo <- datos2$Esperanza_ValorCliente > datos2$E_ValorClienteEstrategia
+datos2$ValorEstrategia <- datos2$E_ValorClienteEstrategia * datos2$Llamo + datos2$NoLlamo * datos2$Esperanza_ValorCliente 
+
+datos2 <- datos2[complete.cases(datos2),]
+
+sum(datos2$Esperanza_ValorCliente)
+sum(datos2$E_ValorClienteEstrategia)
+sum(datos2$ValorEstrategia)
+
+install.packages('rio')
+library(rio)
+Export(datos2, 'tabla_final.xlsx')
